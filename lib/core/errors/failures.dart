@@ -1,88 +1,33 @@
 import 'package:equatable/equatable.dart';
 
 abstract class Failure extends Equatable {
-  final String message;
-  final int code;
-
-  const Failure({required this.message, required this.code});
-
   @override
-  List<Object> get props => [message, code];
+  List<Object> get props => [];
 }
 
 /// Server-related failures
-class ServerFailure extends Failure {
-  const ServerFailure({
-    required String message,
-    required int code,
-  }) : super(message: message, code: code);
-}
+class ServerFailure extends Failure {}
 
 /// Network-related failures
-class NetworkFailure extends Failure {
-  const NetworkFailure({
-    String message = 'Network connection failed. Please check your internet connection.',
-    int code = 0,
-  }) : super(message: message, code: code);
-}
+class InternetConnectionFailure extends Failure {}
 
 /// Cache-related failures
-class CacheFailure extends Failure {
-  const CacheFailure({
-    String message = 'Cache operation failed.',
-    int code = 0,
-  }) : super(message: message, code: code);
-}
+class CacheFailure extends Failure {}
 
 /// Authentication-related failures
-class AuthFailure extends Failure {
-  const AuthFailure({
-    required String message,
-    int code = 401,
-  }) : super(message: message, code: code);
-  
-  factory AuthFailure.invalidCredentials() => const AuthFailure(
-    message: 'Invalid email or password.',
-    code: 401,
-  );
-  
-  factory AuthFailure.userNotFound() => const AuthFailure(
-    message: 'User not found.',
-    code: 404,
-  );
-  
-  factory AuthFailure.emailAlreadyInUse() => const AuthFailure(
-    message: 'Email is already in use.',
-    code: 409,
-  );
-  
-  factory AuthFailure.weakPassword() => const AuthFailure(
-    message: 'Password is too weak.',
-    code: 400,
-  );
-  
-  factory AuthFailure.userDisabled() => const AuthFailure(
-    message: 'This user has been disabled.',
-    code: 403,
-  );
-  
-  factory AuthFailure.unauthorized() => const AuthFailure(
-    message: 'You are not authorized to perform this action.',
-    code: 403,
-  );
-  
-  factory AuthFailure.sessionExpired() => const AuthFailure(
-    message: 'Your session has expired. Please sign in again.',
-    code: 401,
-  );
-}
+class AuthenticationFailure extends Failure {}
+class PermissionDeniedFailure extends Failure {}
+class UserNotFoundFailure extends Failure {}
+class InvalidCredentialsFailure extends Failure {}
 
 /// Input validation failures
-class ValidationFailure extends Failure {
-  const ValidationFailure({
-    required String message,
-    int code = 400,
-  }) : super(message: message, code: code);
+class DataValidationFailure extends Failure {
+  final String message;
+
+  DataValidationFailure({required this.message});
+
+  @override
+  List<Object> get props => [message];
 }
 
 /// Data-related failures
@@ -148,9 +93,16 @@ class ScanFailure extends Failure {
 }
 
 /// Report generation failures
-class ReportFailure extends Failure {
+class ReportGenerationFailure extends Failure {
   const ReportFailure({
     String message = 'Report generation failed.',
     int code = 500,
   }) : super(message: message, code: code);
-} 
+}
+
+/// Business logic failures
+class InsufficientStockFailure extends Failure {}
+class ProductionFailure extends Failure {}
+
+/// Generic failures
+class UnexpectedFailure extends Failure {} 

@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:equatable/equatable.dart';
 import 'package:smart_tracking_app/data/models/user_model.dart';
+import 'package:smart_tracking_app/domain/entities/material.dart' as entity;
 
 part 'material_model.g.dart';
 
@@ -248,4 +249,185 @@ class MaterialModel extends Equatable {
     updatedBy,
     isActive,
   ];
+}
+
+class MaterialModel extends entity.Material {
+  MaterialModel({
+    required String id,
+    required String name,
+    required String description,
+    String? barcode,
+    String? qrCode,
+    String? sku,
+    required entity.MaterialUnit unit,
+    required double costPerUnit,
+    required double currentStock,
+    required double reorderLevel,
+    required double criticalLevel,
+    String? supplier,
+    String? supplierContact,
+    String? imageUrl,
+    String? location,
+    Map<String, dynamic>? additionalProperties,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required String createdBy,
+  }) : super(
+          id: id,
+          name: name,
+          description: description,
+          barcode: barcode,
+          qrCode: qrCode,
+          sku: sku,
+          unit: unit,
+          costPerUnit: costPerUnit,
+          currentStock: currentStock,
+          reorderLevel: reorderLevel,
+          criticalLevel: criticalLevel,
+          supplier: supplier,
+          supplierContact: supplierContact,
+          imageUrl: imageUrl,
+          location: location,
+          additionalProperties: additionalProperties,
+          createdAt: createdAt,
+          updatedAt: updatedAt,
+          createdBy: createdBy,
+        );
+
+  factory MaterialModel.fromJson(Map<String, dynamic> json) {
+    return MaterialModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String,
+      barcode: json['barcode'] as String?,
+      qrCode: json['qrCode'] as String?,
+      sku: json['sku'] as String?,
+      unit: _parseUnit(json['unit'] as String),
+      costPerUnit: (json['costPerUnit'] as num).toDouble(),
+      currentStock: (json['currentStock'] as num).toDouble(),
+      reorderLevel: (json['reorderLevel'] as num).toDouble(),
+      criticalLevel: (json['criticalLevel'] as num).toDouble(),
+      supplier: json['supplier'] as String?,
+      supplierContact: json['supplierContact'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      location: json['location'] as String?,
+      additionalProperties: json['additionalProperties'] as Map<String, dynamic>?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdBy: json['createdBy'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'barcode': barcode,
+      'qrCode': qrCode,
+      'sku': sku,
+      'unit': unit.toString().split('.').last,
+      'costPerUnit': costPerUnit,
+      'currentStock': currentStock,
+      'reorderLevel': reorderLevel,
+      'criticalLevel': criticalLevel,
+      'supplier': supplier,
+      'supplierContact': supplierContact,
+      'imageUrl': imageUrl,
+      'location': location,
+      'additionalProperties': additionalProperties,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'createdBy': createdBy,
+    };
+  }
+
+  factory MaterialModel.fromEntity(entity.Material material) {
+    return MaterialModel(
+      id: material.id,
+      name: material.name,
+      description: material.description,
+      barcode: material.barcode,
+      qrCode: material.qrCode,
+      sku: material.sku,
+      unit: material.unit,
+      costPerUnit: material.costPerUnit,
+      currentStock: material.currentStock,
+      reorderLevel: material.reorderLevel,
+      criticalLevel: material.criticalLevel,
+      supplier: material.supplier,
+      supplierContact: material.supplierContact,
+      imageUrl: material.imageUrl,
+      location: material.location,
+      additionalProperties: material.additionalProperties,
+      createdAt: material.createdAt,
+      updatedAt: material.updatedAt,
+      createdBy: material.createdBy,
+    );
+  }
+
+  MaterialModel copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? barcode,
+    String? qrCode,
+    String? sku,
+    entity.MaterialUnit? unit,
+    double? costPerUnit,
+    double? currentStock,
+    double? reorderLevel,
+    double? criticalLevel,
+    String? supplier,
+    String? supplierContact,
+    String? imageUrl,
+    String? location,
+    Map<String, dynamic>? additionalProperties,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? createdBy,
+  }) {
+    return MaterialModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      barcode: barcode ?? this.barcode,
+      qrCode: qrCode ?? this.qrCode,
+      sku: sku ?? this.sku,
+      unit: unit ?? this.unit,
+      costPerUnit: costPerUnit ?? this.costPerUnit,
+      currentStock: currentStock ?? this.currentStock,
+      reorderLevel: reorderLevel ?? this.reorderLevel,
+      criticalLevel: criticalLevel ?? this.criticalLevel,
+      supplier: supplier ?? this.supplier,
+      supplierContact: supplierContact ?? this.supplierContact,
+      imageUrl: imageUrl ?? this.imageUrl,
+      location: location ?? this.location,
+      additionalProperties: additionalProperties ?? this.additionalProperties,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+    );
+  }
+
+  static entity.MaterialUnit _parseUnit(String unitString) {
+    switch (unitString) {
+      case 'kg':
+        return entity.MaterialUnit.kg;
+      case 'grams':
+        return entity.MaterialUnit.grams;
+      case 'liters':
+        return entity.MaterialUnit.liters;
+      case 'meters':
+        return entity.MaterialUnit.meters;
+      case 'pieces':
+        return entity.MaterialUnit.pieces;
+      case 'sheets':
+        return entity.MaterialUnit.sheets;
+      case 'rolls':
+        return entity.MaterialUnit.rolls;
+      default:
+        return entity.MaterialUnit.other;
+    }
+  }
 } 

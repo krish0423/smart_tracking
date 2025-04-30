@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smart_tracking_app/config/routes.dart';
-import 'package:smart_tracking_app/core/constants/app_constants.dart';
+import 'package:smart_tracking_app/core/errors/failures.dart';
 import 'package:smart_tracking_app/presentation/bloc/auth/auth_provider.dart';
 import 'package:smart_tracking_app/presentation/widgets/custom_button.dart';
 import 'package:smart_tracking_app/presentation/widgets/custom_text_field.dart';
@@ -17,8 +17,9 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _passwordVisible = false;
-  bool _rememberMe = false;
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -27,222 +28,166 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _togglePasswordVisibility() {
-    setState(() {
-      _passwordVisible = !_passwordVisible;
-    });
-  }
-
-  bool _validateForm() {
-    return _formKey.currentState?.validate() ?? false;
-  }
-
   Future<void> _login() async {
-    if (!_validateForm()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    FocusScope.of(context).unfocus();
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.signIn(
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final result = await authProvider.signIn(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
 
-    if (success && mounted) {
-      if (authProvider.isAdmin) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.adminHome);
+      if (!mounted) return;
+
+      if (result) {
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
       } else {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.operatorHome);
+        setState(() {
+          _errorMessage = authProvider.errorMessage ?? 'Login failed';
+          _isLoading = false;
+        });
       }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            height: size.height - MediaQuery.of(context).padding.top,
-            padding: const EdgeInsets.all(24),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
             child: Form(
               key: _formKey,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
-                  // Logo
-                  Center(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.inventory_2_rounded,
-                        size: 48,
-                        color: theme.colorScheme.onPrimary,
-                      ),
-                    ),
+                  // Logo or app title
+                  const Icon(
+                    Icons.inventory,
+                    size: 80,
+                    color: Colors.blue,
                   ),
-                  const SizedBox(height: 24),
-                  // Title
+                  const SizedBox(height: 16),
                   Text(
-                    AppConstants.appName,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'SmartFab Tracker',
+                    style: Theme.of(context).textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  // Subtitle
                   Text(
-                    'Sign in to your account',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onBackground.withOpacity(0.6),
-                    ),
+                    'Material Tracking & Costing',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 48),
+
                   // Error message
-                  if (authProvider.errorMessage != null)
+                  if (_errorMessage != null)
                     Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            color: theme.colorScheme.error,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              authProvider.errorMessage!,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        ],
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                  if (authProvider.errorMessage != null)
-                    const SizedBox(height: 24),
+                  if (_errorMessage != null) const SizedBox(height: 24),
+
                   // Email field
                   CustomTextField(
                     controller: _emailController,
                     label: 'Email',
                     hintText: 'Enter your email',
-                    prefixIcon: Icons.email_outlined,
+                    prefixIcon: Icons.email,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(value)) {
                         return 'Please enter a valid email';
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
+
                   // Password field
                   CustomTextField(
                     controller: _passwordController,
                     label: 'Password',
                     hintText: 'Enter your password',
-                    prefixIcon: Icons.lock_outline,
-                    obscureText: !_passwordVisible,
+                    prefixIcon: Icons.lock,
+                    obscureText: !_isPasswordVisible,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
                       }
                       return null;
                     },
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _passwordVisible
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                        color: theme.colorScheme.primary,
+                        _isPasswordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
-                      onPressed: _togglePasswordVisibility,
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Remember me and Forgot password
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (value) {
-                              setState(() {
-                                _rememberMe = value ?? false;
-                              });
-                            },
-                          ),
-                          Text(
-                            'Remember me',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.forgotPassword);
-                        },
-                        child: Text(
-                          'Forgot password?',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
                   // Login button
                   CustomButton(
-                    text: 'Sign In',
-                    onPressed: _login,
-                    isLoading: authProvider.isLoading,
+                    text: 'Login',
+                    onPressed: _isLoading ? null : _login,
+                    isLoading: _isLoading,
                   ),
-                  const Spacer(),
-                  // Register link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pushNamed(AppRoutes.register);
-                        },
-                        child: Text(
-                          'Register',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+
+                  // Text for demo accounts
+                  const Text(
+                    'Demo Accounts:',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Admin: admin@smartfab.com / admin123\nOperator: operator@smartfab.com / operator123',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey[700], fontSize: 12),
                   ),
                 ],
               ),
